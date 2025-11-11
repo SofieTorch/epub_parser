@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
+import 'package:collection/collection.dart';
 import 'package:epub_decoder/epub.dart';
 import 'package:epub_decoder/models/document_metadata.dart';
 import 'package:epub_decoder/models/item_media_type.dart';
@@ -71,12 +72,20 @@ class Item extends Equatable {
   ///
   /// Throws an [AssertionError] if the file could not be found.
   Uint8List get fileContent {
-    final file = _source.findFile('OEBPS/$href');
-    if (file == null) {
-      throw AssertionError('File in href OEBPS/$href does not exists');
-    }
-
     return file.content;
+  }
+
+  /// ArchiveFile from [href].
+  ///
+  /// Throws an [AssertionError] if the file could not be found.
+  ArchiveFile get file {
+    final file = _source.find(href) ??
+        _source.find('OEBPS/$href') ??
+        _source.files.firstWhereOrNull((f) => f.name.endsWith(href));
+    if (file == null) {
+      throw AssertionError('File href $href does not exists');
+    }
+    return file;
   }
 
   @override
