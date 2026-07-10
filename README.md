@@ -33,7 +33,8 @@ Flutter Package to parse EPUB files (EBooks), with support for Media Overlays!
 ✅ List sections (also commonly named "chapters") in default reading order  
 ✅ Get section audio (if exists)  
 ✅ Get text-audio synchronization info for each section  
-✅ Get text segment given a time for each section
+✅ Get text segment given a time for each section  
+✅ Get page progression direction from the EPUB spine  
 
 ### Work in progress
 
@@ -317,6 +318,29 @@ And then, access its properties:
   ```
 
     </details>
+
+- **Retrieving page progression direction:** `epub.pageProgressionDirection`
+
+  ```dart
+  import 'package:epub_decoder/epub_decoder.dart' show PageProgressionDirection;
+
+  final PageProgressionDirection? direction = epub.pageProgressionDirection;
+
+  switch (direction) {
+    case PageProgressionDirection.ltr:
+      // left-to-right
+      break;
+    case PageProgressionDirection.rtl:
+      // right-to-left
+      break;
+    case PageProgressionDirection.$default:
+      // The publication declares no preference.
+      break;
+    case null:
+      // Attribute is not declared.
+      break;
+  }
+  ```
 
 ## Additional information
 
