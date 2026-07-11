@@ -4,6 +4,7 @@ export 'document_metadata.dart';
 export 'item.dart';
 export 'item_media_type.dart';
 export 'item_property.dart';
+export 'page_progression_direction.dart';
 export 'section.dart';
 export 'smil_parallel.dart';
 export 'lazy.dart';

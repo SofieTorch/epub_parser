@@ -120,4 +120,9 @@ void main() {
 
     expect(epubWithoutCover.cover, isNull);
   });
+
+  test('''Epub.pageProgressionDirection returns the direction declared
+      in <spine>''', () {
+    expect(epub.pageProgressionDirection, PageProgressionDirection.ltr);
+  });
 }

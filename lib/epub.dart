@@ -20,9 +20,11 @@ class Epub extends Equatable {
   /// The [fileBytes] parameter should contain the raw bytes of the EPUB file.
   Epub.fromBytes(Uint8List fileBytes)
       : zip = ZipDecoder().decodeBytes(fileBytes) {
+    _rootFileContentCache = Lazy(_initializeRootFileContent);
     _metadata = Lazy(_initializeMetadata);
     _items = Lazy(_initializeItems);
     _sections = Lazy(_initializeSections);
+    _pageProgressionDirection = Lazy(_initializePageProgressionDirection);
   }
 
   /// Constructs an [Epub] instance from a [File].
@@ -31,17 +33,21 @@ class Epub extends Equatable {
   Epub.fromFile(File file)
       : assert(file.path._extension == 'epub'),
         zip = ZipDecoder().decodeBytes(file.readAsBytesSync()) {
+    _rootFileContentCache = Lazy(_initializeRootFileContent);
     _metadata = Lazy(_initializeMetadata);
     _items = Lazy(_initializeItems);
     _sections = Lazy(_initializeSections);
+    _pageProgressionDirection = Lazy(_initializePageProgressionDirection);
   }
 
   /// The decoded ZIP archive of the EPUB file.
   final Archive zip;
 
+  late final Lazy<XmlDocument> _rootFileContentCache;
   late final Lazy<List<Metadata>> _metadata;
   late final Lazy<List<Item>> _items;
   late final Lazy<List<Section>> _sections;
+  late final Lazy<PageProgressionDirection?> _pageProgressionDirection;
 
   String get title =>
       metadata
@@ -91,11 +97,14 @@ class Epub extends Equatable {
   /// Content of the root file as an XML document.
   ///
   /// Throws a [FormatException] if the root file is not found.
-  XmlDocument get _rootFileContent {
+  /// Parsed once and cached, since [_metadata], [_items], [_sections]
+  /// and [_pageProgressionDirection] all read from it.
+  XmlDocument get _rootFileContent => _rootFileContentCache.value;
+
+  XmlDocument _initializeRootFileContent() {
     final file = zip.findFile(_rootFilePath);
     file ?? (throw const FormatException('Root file not found.'));
-    final content = XmlDocument.parse(utf8.decode(file.content));
-    return content;
+    return XmlDocument.parse(utf8.decode(file.content));
   }
 
   /// Metadata of the EPUB file, such as title, authors, media overlays, etc.
@@ -201,6 +210,20 @@ class Epub extends Equatable {
     return sections;
   }
 
+  /// Reading direction of the EPUB, as declared in its `<spine>` element.
+  ///
+  /// Returns null when not specified.
+  PageProgressionDirection? get pageProgressionDirection => _pageProgressionDirection.value;
+
+  PageProgressionDirection? _initializePageProgressionDirection() {
+    final spinexml = _rootFileContent.xpath('/package/spine').first;
+    final direction = spinexml.getAttribute('page-progression-direction');
+
+    return direction != null
+        ? PageProgressionDirection.fromValue(direction)
+        : null;
+  }
+
   /// The list of properties that are used to determine whether two instances are equal.
   ///
   /// props[0] = metadata, props[1] = items, props[2] = sections
@@ -212,7 +235,8 @@ class Epub extends Equatable {
         // _sections.isInitialized ? _sections.value : null,
         _metadata,
         _items,
-        _sections
+        _sections,
+        _pageProgressionDirection,
       ];
 }
 
